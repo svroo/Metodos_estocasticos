@@ -1,0 +1,157 @@
+---
+title: "Capitulo 1"
+output: html_notebook
+---
+
+# Chapter 1
+
+First step, install the packages we're need it.
+
+```{r}
+# Excecute if you need it
+# install.packages("diagram")
+# install.packages("expm")
+# install.packages("markovchain")
+```
+
+First, an n x m transition probability matrix should be specified:
+
+tm.name <- matrix(c(p11.value,  p12.value, . . . , pnn.value), nrow=n.value, ncol=n.value, byrow=TRUE)
+
+The plot the diagram with the arrows pointing in the correct direction, the transition matrix must be transposed. This can be done by typing
+tr.tm.name <- t(tm.name)
+
+The diagram is drawn using plotmat function. The graph depicts state names
+inside boxes and directed lines connecting the boxes labeled by the corresponding transition probabilities. The syntax is:
+
+
+library(diagram)
+plotmat(tr.tm.name, <arguments>)
+
+To compute an n-step transition probability matrix for a specific value of n, use the following code:
+
+library(expm)
+nstepmatrix.name <- tm.name %^% n.value
+
+Given the initial distribution, the lines below calclate the uncoditional distribution after n step.
+
+init.p.name <- c(p1.init.vale, p2.init.value,...)
+uncond.dist.name <- init.p.name %*% nstepmatrix.name
+
+To determine recurrent and transient classes, abosrbing states, and the limiting distribution, a discrete-time Markov cahin must be created as an object. It can be done as follows:
+
+
+library(markovchain)
+
+dtmc.name<- new("markovchain", transitionMatrix=tm.name,
+states=c("state1.name", "state2.name",...))
+
+
+Then state characteristic may be obtained as:
+
+recurrentClasses(dtmc.name)
+transientClasses(dtmc.name)
+absorbingStates(dtmc.name)
+steadyStates(dtmc.name)
+
+
+Note that R doesn't identify reflecting states.
+
+In R, one can compute the period of an irreducible (a single-class) Markov chain only. The syntax is period(dtme.name)
+
+### Example 1.8
+The results obtained for the Markov chain from Examples 1.1-1.4 and 1.6 can be produced in R as presented below.
+
+```{r}
+#specifying transition probability matrix
+tm<- matrix(c(0.7, 0.1, 0.2, 0.0, 0.6, 0.4, 0.5, 0.2, 0.3),
+nrow=3, ncol=3, byrow=TRUE)
+
+#transposing transition probability matrix
+tm.tr<- t(tm)
+
+#plotting diagram
+library(diagram)
+
+plotmat(tm.tr, pos=c(1,2), arr.length=0.3, arr.width=0.1,
+box.col="light blue", box.lwd=1, box.prop=0.5, box.size=0.12,
+box.type="circle", cex.txt=0.8, lwd=1, self.cex=0.6,
+self.shiftx=0.17, self.shifty=-0.01)
+```
+
+```{r}
+# computing three-step transition probability matrix
+library(expm)
+print(tm3<-tm%^%3)
+```
+
+```{r}
+# computing unconditional distribution after three steps
+init.p <- c(1/3, 1/3, 1/3)
+init.p%*%tm3
+```
+
+
+```{r}
+# Creating Markov chain object
+library(markovchain)
+mc <- new('markovchain', transitionMatrix = tm, states=c('1','2','3'))
+
+# Computing Markov chain characteristics
+recurrentClasses(mc)
+
+transientClasses(mc)
+
+absorbingStates(mc)
+
+period(mc)
+
+round(steadyStates(mc), digits=4)
+```
+
+## Example 1.9
+Consider the Markov chain from Examples 1.5 and 1.7. We run the following R code to produce the diagram, invariant vectors, and to verify the state classification.
+```{r}
+# specifying transition probability matrix
+tm<- matrix(c(0.3,0.7,0,0,0,0,1,0,0,0,0,0,0.5,0,0,0,0,0.5,
+0,0,0.6,0,0,0.4,0,0,0,0,0.1,0.9,0,0,0,0,0.7,0.3), nrow=6,
+ncol=6, byrow=TRUE)
+
+
+# transposing transition probability matrix
+tm.tr <- t(tm)
+
+# plotting diagram
+library(diagram) 
+plotmat(tm.tr, arr.length=0.3, arr.width=0.1, box.col="cyan", box.lwd=1, box.prop=0.5, box.size=0.09,
+box.type="circle", cex.txt=0.8, lwd=1, self.cex=0.3,
+self.arrpos=0.3, self.shiftx=0.09, self.shifty=-0.05)
+```
+
+```{r}
+#creating Markov chain object
+library(markovchain)
+mc<- new("markovchain", transitionMatrix=tm, states=c("1",
+"2", "3", "4", "5", "6"))
+#computing Markov chain characteristics
+recurrentClasses(mc)
+
+transientClasses(mc)
+```
+
+```{r}
+#finding periods of irreducible Markov chains
+tm12.ir<- matrix(c(0.3,0.7,1,0), nrow=2, ncol=2, byrow=TRUE)
+mc12.ir<- new("markovchain", transitionMatrix=tm12.ir,
+states=c("1","2"))
+period(mc12.ir)
+
+tm56.ir<- matrix(c(0.1,0.9,0.7,0.3), nrow=2, ncol=2,
+byrow=TRUE)
+mc56.ir<- new("markovchain", transitionMatrix=tm56.ir,
+states=c("5","6"))
+period(mc56.ir)
+
+#finding steady-state distribution
+round(steadyStates(mc), digits=4)
+```

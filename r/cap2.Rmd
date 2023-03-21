@@ -1,0 +1,422 @@
+---
+title: "Capitulo 2"
+output: html_notebook
+---
+
+```{r}
+# install.packages('plot3D')
+```
+
+Codigo de ejemplo.
+
+## Simulations in R
+Simulation 2.1. Below we simulate three trajectories of one-dimensional random walk. We assume the walk starts at zero, and specify p as 0.6 and the number of steps as 25.
+
+```{r}
+# specifying parameters
+ntraj <- 3
+p <- 0.6
+nsteps <- 25
+
+# Specifying seed
+set.seed(45568223)
+
+# defining walk as matrix
+walk <- matrix(NA, nrow = nsteps, ncol = ntraj)
+
+# Simulating trajectories
+for (j in 1:ntraj){
+  walk[1,j] <- 0
+  for (i in 2:nsteps)
+    walk[i,j] <- ifelse(runif(1)<p, walk[i-1, j]+1, walk[i-1,j]-1)
+}
+
+# plotting trajectories
+matplot(walk, type="l", lty=1, lwd=2, col=2:4,
+ylim=c(range(walk)), xlab="Step", ylab="Position",
+panel.first=grid())
+points(1:nsteps, walk[,1], pch=16, col=2)
+points(1:nsteps, walk[,2], pch=16, col=3)
+points(1:nsteps, walk[,3], pch=16, col=4)
+```
+### Simulation 2.2
+The code blow simulates and plots a two-dimensional random walk with a total of 10,000 steps, emanating from the origin
+
+```{r}
+# specifying number of steps
+nsteps <- 10000
+
+# Specifying seed
+set.seed(607335)
+
+# Defining walk as matrix
+walk <- matrix(NA, nrow = nsteps, ncol =2)
+
+# setting starting point
+walk[1,] <- c(0,0)
+
+# Definiting random steps
+rstep<- matrix(c(1, 0, -1, 0, 0, 1, 0, -1), nrow=4, ncol=2,
+byrow=TRUE)
+
+#simulating trajectories
+for (i in 2:nsteps)
+walk[i,]<- walk[i-1,] + rstep[sample(1:4, size=1),]
+#plotting trajectories
+plot(x=walk[,1], y=walk[,2], type="l", col="blue",
+xlim=range(walk[,1]), ylim=range(walk[,2]), xlab="x",
+ylab="y", panel.first=grid())
+#adding starting point
+points(cbind(walk[1,1], walk[1,2]), pch=16, col="green",
+cex=2)
+#adding ending point
+points(cbind(walk[nsteps,1],walk[nsteps,2]), pch=16,
+col="red", cex=2)
+
+```
+
+### Simulation 2.3
+The following code simulates and plots a three-dimensional random walk with 5,000 steps.
+
+```{r}
+#specifying number of steps
+nsteps<- 5000
+#specifying seed
+set.seed(830126)
+#defining walk as matrix
+walk<- matrix(NA, nrow=nsteps, ncol=3)
+#setting starting point
+walk[1,]<- c(0,0,0)
+#defining random steps
+rstep<- matrix(c(1,0,0,-1,0,0,0,1,0,0,-1,0,0,0,1,0,0,-1),
+nrow=6, ncol=3, byrow=TRUE)
+#simulating trajectories
+for (i in 2:nsteps)
+walk[i,]<- walk[i-1,]+rstep[sample(1:6, size=1),]
+#plotting trajectories
+library(plot3D)
+lines3D(walk[,1], walk[,2], walk[,3], col="blue",
+xlim=range(walk[,1]), ylim=range(walk[,2]),
+zlim=range(walk[,3]), xlab="x", ylab="y", zlab="z", bty="b2",
+ticktype="detailed")
+#adding starting point
+points3D(x=walk[1,1], y=walk[1,2], z=walk[1,3], add=TRUE,
+pch=16, col="green", cex=2)
+#adding ending point
+points3D(walk[nsteps,1], walk[nsteps,2], walk[nsteps,3],
+add=TRUE, pch=16, col="red", cex=2)
+
+```
+### Aplication of Random Walk
+Example:
+```{r}
+# Specifying parameters
+p <- 0.55
+i <- 10
+N <- 20
+ntraj <- 100000
+
+# Defining walk as vector
+walk <- c()
+
+# Setting counters
+nNs <- 0
+nzeros <- 0
+ngames <- 0
+
+# Setting seed number
+set.seed(30112443)
+
+# Simulating trajectories until hitting N or 0
+for (j in 1 : ntraj){
+  walk[1] <- i
+  k <- 2
+  repeat{
+    walk[k] <- ifelse(runif(1)<p, walk[k-1] + 1, walk[k-1]-1)
+    ngames <- ngames + 1
+    
+    if (walk[k] == N){
+      nNs <- nNs + 1
+      break
+    }
+    
+    else if(walk[k] == 0){
+      nzeros <- nzeros +1
+      break
+    }
+  k <- k + 1
+  }
+}
+
+print(prob.Ns <- nNs/ntraj)
+
+print(prob.zeros <- nzeros/ntraj)
+
+print(mean.ngames<- ngames/ntraj)
+```
+
+Next, we can plot the graph of the probabilities as a function of p, for our specific values of i = 10 and N = 20. The syntax and the graph follow. The green curve depicts the probability of reaching N, whereas the red one displays the probability of ruin.
+
+```{r}
+p<- seq(0.35,0.65,0.001)
+i<- 10
+N<- 20
+q<- 1-p
+p.ruin<- ifelse(p==0.5,(N-i)/N,((q/p)^i-(q/p)^N)/(1-(q/p)
+^N))
+
+
+# plotting the graphs
+plot(p,p.ruin, type = "l", lwd=2, col = "red", xlab="p",
+ylab="Probability", panel.first = grid())
+lines(p, 1-p.ruin, lwd=2, col = "green")
+legend("right", c("Probability of $0", "Probability of $N"),
+lty=1, col=2:3)
+```
+
+Finally, we plot the graph of the expected number of games against p. The code and the output are presented below.
+
+```{r}
+p <- seq(0.01, 1, 0.01)
+i <- 10
+N <- 20
+q <- 1-p
+E.ngames <- ifelse(p==0.5,i*(N-i),(i-N*(1-(q/p)^i)/(1-(q/p) ^N))/(1-2*p))
+
+plot(p, E.ngames, type="l", lwd=2, col="green", xlab="p",
+ylab="Expected number of games", panel.first=grid())
+
+```
+
+
+```{r}
+#specifying transition probability matrix
+tm<- matrix(c(1,0,0,0,0,0,1/4,0,1/4,1/4,0,1/4,0,1/2,0,
+1/2,0,0,0,1/4,1/4,0,1/4,1/4,1/3,0,0,1/3,0,1/3,0,1/3,0,1/3,1/
+3,0), nrow=6, ncol=6, byrow=TRUE)
+#setting counter
+nsec<- 0
+#estimating expected number of seconds
+p<- matrix(NA, nrow=172, ncol=6)
+p[1,]<- c(0, 0, 0, 1, 0, 0)
+for (i in 2:172) {
+p[i,]<- p[i-1,]%*%tm
+nsec<- nsec+(i-1)*(p[i,1]-p[i-1,1])
+}
+print(nsec)
+```
+
+# Ejercicios:
+### Excercise 2.1
+Consider a symmetric one-dimensional random walk that originates at 0.
+- simulate 10,000 trajectories with 1,000 steps each. How many of the trajectories are at point 0 on the 1,000th step?
+- Find the theoretical probability of returning to 0 on the 1,000th step. Compare to the empirical value.
+
+In theory, $E(X_{50})=((2)(0.3)-1)(50) = -20~and~Var(X_{50})=(4)(0.3)(1/0.3)(50) = 42$
+
+```{r}
+# specifying parameters
+p <- 0.3
+n <- 50
+ntraj<- 10000
+#setting seed number
+set.seed(546675)
+#defining walk as matrix
+walk<- matrix(NA, nrow=n, ncol=ntraj)
+#simulating trajectories
+for (j in 1:ntraj) {
+ walk[1,j]<- 0
+ for (k in 2:n) {
+ walk[k,j]<- ifelse(runif(1)<p, walk[k-1,j]+1, walk[k-1,j]-1)
+ }
+}
+
+mean(walk[50,])
+
+var(walk[50,])
+```
+The empirical values are pretty close to the theoretical ones.
+
+## Excersise 2.2
+Consider a symmetric one-dimensional random walk that originates at 0.
+- Simulate 10,000 trajectories with 1,000 steps each. How many of the trajectories are at point 0 on the 1,000th step? 
+- Find the theoretical probability of returning to 0 on the 1,000th step.
+Compare to the empirical value.
+
+```{r}
+# setting counter to zzero
+nzeros <- 0
+
+# Specifying seed
+set.seed(675572)
+
+# Defining walk as matrix 
+walk <- c()
+
+# Simulating trajectories
+for (j in 1: 10000){
+  walk[1] <- 0
+  for (i in 2 : 1001)
+    walk[i] <- ifelse(runif(1)<0.5, walk[i-1]+1, walk[i-1]-1)
+ if (walk[1001]==0) nzeros=nzeros+1 
+}
+print(nzeros)
+```
+
+a) The theoretical probability of returning to - on the 1,000th step is:
+$$P(X_{1000} = 0\mid X_0 =0)\begin{pmatrix}1000\\500\end{pmatrix}\left(\frac{1}{2}\right)^{1000} = 0.025$$
+This quantity was computed in R:
+```{r}
+choose(1000, 500)*0.5 ^1000
+```
+The estimated probability from part (a) is $P(X_{1000}=0\mid X_0 = 0)=\frac{253}{10000} = 0.253$, wich is a pretty accurate estimate of the theoretical value.
+
+# Exercise 2.3
+Simulate 10,000 trajectories of 1D, 2D, and 3D summetric random walks that start at the origin and continue for at most 1,000 steps.
+- Compute how many of them returned to the origin at least once. Compare the results for different dimensions. Hint: Terminate a trajectory when it returns to the origin.
+- Consider only the trajectories that returned to the origin within the 1,000 steps. Compute the average number of steps it took these trajectories to return to the origin. Compare the results for differentdimensions.
+
+```{r}
+#setting counters to zero
+n1D<- 0
+n2D<- 0
+n3D<- 0
+#specifying seed
+set.seed(300799)
+#defining 1D walk as vector
+walk1D<- c() 
+nsteps1D<- c()
+#simulating 1D trajectories
+for (j in 1:10000) 
+ {
+ walk1D[1]<- 0 #setting initial value to zero
+ for (i in 2:1001) 
+ {
+ walk1D[i]<- ifelse(runif(1)<0.5, walk1D[i-1]+1, walk1D[i-1]-1)
+ if (walk1D[i]==0) { 
+ n1D=n1D+1 
+ break }
+ }
+ nsteps1D[j]=i
+}
+
+
+# Defining 2D walk as matrix
+walk2D <- matrix(NA, nrow = 1001, ncol = 2)
+nsteps2D <- c()
+
+# Defining randoms steps
+rstep2D<- matrix(c(1, 0, -1, 0, 0, 1, 0, -1), nrow=4, ncol=2, byrow=TRUE)
+
+#simulating 2D trajectories
+for (j in 1 : 10000)
+{
+  walk2D[1,] <- c(0,0) # setting initial value to origin
+  for (i in 2:1001)
+  {
+    walk2D[i,] <- walk2D[i-1,]+rstep2D[sample(1:4, size=1),]
+    if (walk2D[i,1]==0 & walk2D[i,2]==0) {
+      n2D = n2D + 1
+      break  }
+  }
+  nsteps2D[j] = i
+}
+
+#defining 3D walk as matrix
+walk3D<- matrix(NA, nrow=1001, ncol=3)
+nsteps3D<- c()
+
+#defining random steps
+rstep3D<- matrix(c(1, 0, 0,-1, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 1, 0, 0, -1), 
+nrow=6, ncol=3, byrow=TRUE)
+#simulating 3D trajectories
+for (j in 1:10000) 
+{
+ walk3D[1,]<- c(0,0,0) #setting initial value to the origin
+ for (i in 2:1001) 
+ {
+ walk3D[i,]<- walk3D[i-1,]+rstep3D[sample(1:6, size=1),]
+ 
+ if (walk3D[i,1]==0 & walk3D[i,2]==0 & walk3D[i,3]==0) { 
+ n3D=n3D+1 
+ break }
+ }
+ nsteps3D[j]=i
+}
+
+print(n1D)
+print(n2D)
+print(n3D)
+```
+
+Roughly 97.6% of the 1D trajectories returned to 0, about 67.6% of the 2D trajectories returned to (0, 0), and only 33.3% of the 3D trajectories returned to (0, 0, 0).
+
+- The average number of steps it took those trajectories to return to the origin is computed as: 
+```{r}
+mean(nsteps1D[nsteps1D!=1001])
+
+mean(nsteps2D[nsteps2D!=1001])
+
+mean(nsteps3D[nsteps3D!=1001])
+```
+
+The 97.6% of the 1D trajectories that returned to the origin, did it in 27.47 steps, on average.
+The 67.6% of the 2D trajectories that returned to the origin, did it in 61.48 steps, on average. 
+The 33.3% of the 3D trajectories that returned to the origin, did it in 27.84 steps, on average
+
+## Exercise 2.4
+Simulate 10,000 trajectories of a two-dimensional symmetric random walk that starts at the origin and continues for a maximum of 1,000 steps.
+- Estimate the probability of a trajectory ever hitting the vertical barrier $x=30$
+- Estimate the average number of steps it takes a trajectory to hit the barrier, provided it did hit the barrier within the 1,000 steps.
+- Estimate the expected value of the y-coordinate at the time when the random walk hits the barrier. What should this value be from the theoretical point of view? Hint: deduce from a symmetry argument.
+
+The R script below simulates the trajectories and terminates them if the barrier is hit. Otherwise, trajectories continue for 1,000 steps. The total number of trajectories that hit the barrier is counted. We also record the number of steps (for part (b)) and the 𝑦𝑦-coordinate (for part (c)).
+
+```{r}
+# Setting counter to zero
+nhits <- 0
+
+# specifying seed
+set.seed(50118)
+
+# defining walk as matrix
+walk <- matrix(NA, nrow = 1001, ncol = 2)
+nsteps <- c()
+ycoord <- c()
+
+# Defining random steps
+rstep <- matrix(c(1, 0, -1, 0, 0, 1, 0, -1), nrow=4, ncol=2, byrow=TRUE)
+ 
+#simulating trajectories
+for (j in 1:10000) 
+ {
+ walk[1,]<- c(0,0) #setting initial value to the origin
+ for (i in 2:1001) 
+ {
+ walk[i,]<- walk[i-1,] + rstep[sample(1:4, size=1),]
+ 
+ if (walk[i,1]==30) { 
+ nhits=nhits+1
+ break }
+ }
+ nsteps[j]<- i
+ ycoord[j]<- ifelse(i==1001, 99999, walk[i,2])
+} 
+print(nhits)
+```
+
+So, of the 10,000 trajectories, 1,764 hit the vertical barrier. Thus, the estimated probability to hit the barrier is 0.1764.
+
+b) The average number of steps it takes a trajectory to hit the barrier, provided it did hit the barrier within the 1,000 steps, is estimated as:
+```{r}
+mean(nsteps[nsteps!=1001])
+```
+It took on average 623.2 steps to hit the barrier for the 17.64% of the trajectories that terminated at the barrier.
+
+(a) Estimate the expected value of the 𝑦𝑦-coordinate at the time when the random walk hits the barrier. What should this value be from the theoretical point of view? Hint: deduce from a symmetry argument.
+```{r}
+mean(ycoord[ycoord!=99999])
+```
+
+The estimated average 𝑦𝑦-coordinate for 17.64% of the trajectories that hit the barrier was 0.1066. 
+From the theoretical viewpoint, using the symmetry of the random walk, we can argue that the y-coordinate should be equal to 0.
