@@ -116,7 +116,7 @@ Obtenemos los datos de el centro de la página web del Centro de Datos de Terrem
 ```
 
 
-
+```{r}
 # Intervalos en tiempos de llegadas
 binned.int<- as.factor(ifelse(int<40,"1", ifelse(int>=40 & int<80,"2",ifelse(int>=80 & int<120,"3", ifelse(int>=120 & int<160,"4",ifelse(int>=160 & int<200,"5", ifelse(int>=200 & int<240,"6","7")))))))
 
@@ -136,9 +136,9 @@ exp[5]<- length(int)*(exp(-160/mean.est)-exp(-200/mean.est))
 exp[6]<- length(int)*(exp(-200/mean.est)-exp(-240/mean.est))
 exp[7]<- length(int)*exp(-240/mean.est)
 obs
+```
 
-
-
+```{r}
 round(exp, 1)
 
 # Calculamos la distribucion chi-cuadrada 
@@ -146,7 +146,7 @@ print(chi.sq <- sum((obs-exp)^2/ exp))
 
 # Calculamos el p-value
 print(p.values <- 1-pchisq(chi.sq, df=5))
-
+```
 
 
 La duracion de un partido de hockey sobre hielo son: $T=60$ minutos. Por lo tanto, obtenemos.

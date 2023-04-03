@@ -541,7 +541,7 @@ hacia arriba \$1 con probabilidad p o hacia abajo \$1 con probabilidad q = 1 - p
 ```{r}
 # Definimos los parametros
 p <- 0.47
-ntraj <- 1000
+ntraj <- 100000
 
 # Fijimos la semilla
 set.seed(314159)
@@ -573,7 +573,7 @@ for (j in 1:ntraj){
   }
 }
 
-print(prop.n80<- n80/ntraj)
+print(prop.n80 <n80 / ntraj)
 
 print(ang.ngames <- ngames / ntraj)
 ```
