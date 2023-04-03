@@ -1,0 +1,542 @@
+---
+title: "Capitulo 3"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+# correr si es necesario
+# install.packages('ggplot2')
+
+# Libreria a utilizar
+library(ggplot2)
+```
+
+# Proceso de Poisson
+
+### 3.2 Simulaciones en R
+
+*Simulacion 3.1*. Al simular una trayectoria de un proceso de Poisson, necesitamos primero simular tiempos entre llegadas distribuidos exponencialmente. Basamos nuestras simulaciones en variables aleatorias uniforma estándar y utilizamos el método de inversión de la función de distribución acumulativa para obtener variables aleatorias distribuidas exponencialmente: si u~Unif(0,1), entonces $-\frac{1}{\lambda}~ln(1/u)$ es exponencial con media $1/\lambda$. Note como  1-u es algos $Unif(0,1)$, podemos simplificar la expresión para las variables aleatorias exponenciales como: $-\frac{1}{\lambda}$ En u.
+
+Para trazar la trayectoria simulada, utilizamos la función *segment()* que toma como argumentos vectores de extremos izquierdo y derecho. A continuación presentamos el código y el gráfico de la trayectoria de un proceso de Poisson con tasa 2 que se detiene cuando realiza el 20º salto.
+
+```{r}
+# Especificamos parametrox
+lambda <- 2
+njumps <- 20
+
+# Definimos el estado
+N <- 0 : njumps
+
+# Establecemos el tiempo como un vector
+time <- c()
+
+# Ajustamos el valor inicial del tiempo
+time[1] <- 0
+
+# Especificamos la semilla
+set.seed(333422)
+
+# Simulamos la trajectoria
+for (i in 2:(njumps + 1))
+  time[i] <- time[i-1] + round((-1/lambda) * log(runif(1)), 2)
+
+# Graficamos la trayectoria
+# type = 'n' dibuja un marco vacío sin gráfico
+plot(time, N, type='n', xlab = 'Time', ylab = 'State', panel.first = grid())
+
+segments(time[-length(time)], N[-length(time)],
+time[-1]-0.07, N[-length(time)], lwd=2, col="blue")
+
+points(time, N, pch=20, col='blue')
+points(time[-1], N[-length(time)], pch=1, col='blue')
+```
+
+### Simulacion 3.2 (Orden uniforme estadísticas). 
+
+Primero tenemos que demostrar el resultado teórico. Consideremos un proceso de Poisson {N(t), t ≥ 0}. Dado que n eventos ocurrieron en el tiempo t, los tiempos en que ocurrieron los eventos se distribuyen como las estadísticas de orden de una distribución uniforme en (0, t).
+
+```{r}
+# Especificamos los parametros
+t <- 10
+lambda <- 2
+
+# Definimos la semilla
+set.seed(32114)
+
+# Generamos N(t)
+njumps <- rpois(1, lambda*t)
+
+# Definimos vistar
+N <- 0:njumps
+
+# Generamos N(t) uniformemente
+u <- c()
+u[1] <- 0
+
+for(i in 2:(njumps+1))
+  u[i] <- runif(1)
+
+# Calculamos los tiempos de los eventos
+time <- t*sort(u)
+
+# graficamos la trajectoria
+plot(time, N, type="n", xlab="Time", ylab="State",
+panel.first = grid())
+segments(time[-length(time)], N[-length(time)],
+time[-1]-0.07, N[-length(time)], lwd=2, col="blue")
+points(time, N, pch=20, col="blue")
+points(time[-1], N[-length(time)], pch=1, col="blue")
+```
+
+### 3.3 Aplicaciones del Proceso de Poisson 
+
+Obtenemos los datos de el centro de la página web del Centro de Datos de Terremotos del Sur de California: https://service.scedc.caltech.edu/eq-catalogs/date_mag_loc.php. 
+```{r}
+# eq.data <- read.csv() # Falta el archivo
+
+# Creamos una variable de tiempo
+# datetime <- as.POSIXct(paste(as.Date(eq.data$DATE), eq.data$TIME))
+
+# calculamos el LAG
+# datetime.lag <- c(0, head(datetime, -1))
+
+# Calculamos el intervalo de tiempo (en horas)
+# int.time <- (as.numeric(datetime) - as.numeric(datetime.lag)) / 3600
+
+# Quitamos el primer valor
+# int.time <- int.time[-1]
+
+# removemos las replicas inmediata (en menos de 3 horas)
+# int <- int.time[int.time > 3]
+
+# Graficamos el histograma
+# hist(int, main='', col='magenta', xlab='Interarrival Time')
+```
+
+
+
+# Intervalos en tiempos de llegadas
+binned.int<- as.factor(ifelse(int<40,"1", ifelse(int>=40 & int<80,"2",ifelse(int>=80 & int<120,"3", ifelse(int>=120 & int<160,"4",ifelse(int>=160 & int<200,"5", ifelse(int>=200 & int<240,"6","7")))))))
+
+# Calculamos las frecuencias observadas
+obs<- table(binned.int)
+
+# Estimamos la media para una distribucion exponencial
+mean.est<- mean(int)
+
+# calculamos las frecuencias esperadas
+exp<- c(1:7)
+exp[1]<- length(int)*(1-exp(-40/mean.est))
+exp[2]<- length(int)*(exp(-40/mean.est)-exp(-80/mean.est))
+exp[3]<- length(int)*(exp(-80/mean.est)-exp(-120/mean.est))
+exp[4]<- length(int)*(exp(-120/mean.est)-exp(-160/mean.est))
+exp[5]<- length(int)*(exp(-160/mean.est)-exp(-200/mean.est))
+exp[6]<- length(int)*(exp(-200/mean.est)-exp(-240/mean.est))
+exp[7]<- length(int)*exp(-240/mean.est)
+obs
+
+
+
+round(exp, 1)
+
+# Calculamos la distribucion chi-cuadrada 
+print(chi.sq <- sum((obs-exp)^2/ exp))
+
+# Calculamos el p-value
+print(p.values <- 1-pchisq(chi.sq, df=5))
+
+
+
+La duracion de un partido de hockey sobre hielo son: $T=60$ minutos. Por lo tanto, obtenemos.
+$$\mathbb{P}(game~ties) = e^{-(1/10+1/12)(60)}\sum_{n=0}^{\infty}\frac{((1/10)(1/12)(60)^2)^n}{(n!)^2}$$
+$$=e^{-11}\sum_{n=0}^{\infty}\frac{30^n}{(n!)^2} = 0.1166$$
+
+Vamos a calcular la suma en R. La suma converde después de 15 terminos.
+
+```{r}
+sum <- 0
+
+# Inicializo el calculo
+for (n in 0:15)
+  sum <- sum + 30^n / (factorial(n))^2
+  
+sum * exp(-11)
+```
+Por lo tanto,
+$$\mathbb{P}(team~A~wins) = e^{-11}\sum_{n=0}^{\infty}\left[\frac{30^n}{n!}~.~\sum_{k=1}^{\infty}\frac{6^k}{(n+k)!} \right] = 0.5590$$
+
+El codigo en R de abajo calcula el doble de la suma
+
+```{r}
+# Initializamos la variable
+sum.n <- 0
+
+# Iniciamos el calculo
+for (n in 0:15){
+  sum.k <- 0
+  for (k in 1:15)
+    sum.k <- sum.k + 6^k / factorial(n+k)
+  sum.n <- sum.n + 30^n/factorial(n) *sum.k
+}
+
+sum.n*exp(-11)
+```
+
+Finalmente,
+$$ \mathbb{P}(team~B~wins) = e^{-11}\sum_{n=0}^\infty\left[\frac{30^n}{n!}~.~\sum_{k=1}^{\infty}\frac{5^{k}}{(n+k)!}\right]=0.3244$$
+
+Como el codigo en R de abajo la calcula:
+
+```{r}
+# Inicilizamos la variable en 0
+sum.n <- 0
+
+# Iniciamos a realizar las sumatorias
+for (n in 0:15){
+  sum.k <- 0
+  for (k in 1:15)
+    sum.k <- sum.k+5^k/factorial(n+k)
+  sum.n <- sum.n + 30^n/factorial(n)*sum.k
+}
+
+sum.n * exp(-11)
+```
+
+# Exercies
+
+### Ejercicio 3.1. 
+Sea {N(t), t ≥ 0} un proceso de Poisson con tasa λ. Encuentre la distribución conjunta de probabilidad P(N(s) = m, N(t) = n), para cualquier t ≥ s ≥ 0 y n ≥ m ≥ 0.
+
+Sea $\{N(t), t \geq 0\}$ un proceso de Poisson con tasa $\lambda$. Encuentre la distribución conjunta de probabilidad $\mathbb{P}(N(s) = m, N(t) = n)$, para cualquier $t\geq s\geq 0$, adn $n\geq m \geq 0$ 
+
+Vamos a usar la 
+Utilizamos la independencia y estacionariedad de los incrementos de un proceso de Poisson para derivar la expresión de la distribución de probabilidad conjunta. Escribimos:
+$$P(N(s))=m,N(t)=n) = P(N(t)-N(s)= n-m, N(s)=m)$$
+$$=P(N(t)-N(s)=n-m) P(N(s) = m) = P(N(t-s) = n-m)P(N(s)=m)$$
+$$=\frac{(\lambda(t-s))^{n-m}}{(n-m)!}e^{-\lambda(t-s)}~.~\frac{(\lambda s)^m}{m!}e^{-\lambda s}=\frac{(t-s)^{n-m}s^{m}}{(n-m)!m!}\lambda^n e^{-\lambda t}$$
+
+$$=\begin{pmatrix}n \\ m \end{pmatrix} \left(\frac{s}{t}\right)^{m} \left(1-\frac{s}{t}\right)^{n-m} \frac{\lambda^n}{n!}e^{-\lambda t}$$
+Este código calcula la matriz de distribución conjunta de probabilidad para diferentes valores de 'm' y 'n' en el intervalo de tiempo [0, t] y crea un gráfico de cuadrícula que muestra la probabilidad para cada combinación de 'm' y 'n'. El color de cada cuadro en el gráfico representa la probabilidad conjunta asociada.
+```{r}
+# Función para calcular la distribución conjunta de probabilidad
+poisson_conjunta <- function(lambda, s, m, t, n) {
+  if (t < s || n < m) {
+    return(0)
+  }
+  
+  dpois_m <- dpois(m, lambda * s)
+  dpois_n_m <- dpois(n - m, lambda * (t - s))
+  
+  prob_conjunta <- dpois_m * dpois_n_m
+  
+  return(prob_conjunta)
+}
+
+# Parámetros del problema
+lambda <- 2
+s <- 3
+t <- 5
+max_n_m <- 10
+
+# Calcular la matriz de distribución conjunta de probabilidad para diferentes valores de 'm' y 'n'
+prob_conjunta_mat <- matrix(0, nrow = max_n_m + 1, ncol = max_n_m + 1)
+
+for (m in 0:max_n_m) {
+  for (n in m:max_n_m) {
+    prob_conjunta_mat[m + 1, n + 1] <- poisson_conjunta(lambda, s, m, t, n)
+  }
+}
+
+# Graficar la matriz de distribución conjunta de probabilidad
+library(ggplot2)
+
+df <- expand.grid(m = 0:max_n_m, n = 0:max_n_m)
+df$prob_conjunta <- as.vector(prob_conjunta_mat)
+
+ggplot(df, aes(x = m, y = n, fill = prob_conjunta)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "blue") +
+  labs(title = "Distribución conjunta de probabilidad",
+       x = "Número de eventos en [0, s]",
+       y = "Número total de eventos en [0, t]") +
+  theme_minimal()
+```
+
+## Ejercicio 3.2. 
+
+Demuestra que para un proceso de Poisson {N(t), t ≥ 0} con tasa λ, la covarianza entre N(s) y N(t) es igual a λ min(s, t), para cualquier s, t ≥ 0.
+
+Supongamos que $s<t$. Calculamos la función de covarianza, utilizando la independencia y estacionariedad de los incrementos. Tenemos
+
+$Cov(N(s), N(t)) = \mathbb{E}[N(s)N(t)] - \mathbb{E}[N(s)] \mathbb{E}[N(t)]$
+$=\mathbb{E}[(N(t)-N(s) + N(s))] - \mathbb{E}[N(s)]\mathbb{E}[N(t)]$
+$=\mathbb{E} [N(t)-N(s)N(s)] + \mathbb{E}[N(s)]^{2}- \mathbb{E}[N(s)]\mathbb{E}[N(t)]$
+$=\mathbb{E}[N(t)-N(s)]\mathbb{E}[N(s)]+var[N(s)]+[\mathbb{E}(N(s))]^{2} - \mathbb{E}[N(s)]\mathbb{E}[N(t)]$
+$\mathbb{E}[N(t-s)]\mathbb{E}[N(s)]+var[N(s)] + [\mathbb{E}(N(s))]^{2}-\mathbb{E}[N(s)]\mathbb{E}[N(t)]$
+$=\lambda(t-s)\lambda s+\lambda s+ (\lambda s)^{2} - \lambda s\lambda t= \lambda s$
+
+Podemos verificar este resultado mediante el siguiente código en R:
+```{r}
+# Definimos la función para la covarianza
+covarianza_poisson <- function(s, t, lambda){
+  # Obtenemos los valores esperados y varianzas necesarias
+  esperanza_ns <- lambda * s
+  esperanza_nt <- lambda * t
+  var_ns <- lambda * s
+  # Calculamos la covarianza
+  cov_ns_nt <- lambda * s
+  # Devolvemos el resultado
+  return(cov_ns_nt)
+}
+
+# Ejemplo de uso
+covarianza_poisson(s = 2, t = 5, lambda = 0.5)
+```
+
+### Exercise 3.3
+Ejercicio 3.3. Un agente de seguros maneja los reclamos de los titulares de pólizas. Los reclamos se presentan los días de la semana de acuerdo con un proceso de Poisson con una tasa λ = 5 por día.
+(a) Si se presentaron dos reclamos el lunes y tres el martes, ¿cuál es la probabilidad de que al final del día del viernes se hayan presentado un total de 16 reclamos esa semana?
+
+$$P(N(5) = 16\mid N(1)=2, N(2)-N(1)=3)$$
+$$=\frac{P(N(5)-N(2)=11, N(2)-N(1)=3, N(1)=2)}{P(N(2)-N(1)=3, N(1)=2)}$$
+$$\frac{P(N(3)=11)P(N(1)=3)P(N(1)=2)}{P(N(1)=3)P(N(1)=2)}=P(N(3)=11)= \frac{((5)(3))^{11}}{11!}e^{-(5)(3)}=0.0663$$
+Podemos verificar este resultado mediante el siguiente código en R:
+```{r}
+# Parámetros del problema
+lambda <- 5
+dias <- 3
+reclamos_totales <- 16
+reclamos_previos <- 2 + 3
+reclamos_restantes <- reclamos_totales - reclamos_previos
+
+# Calcular la probabilidad usando la función dpois
+probabilidad <- dpois(reclamos_restantes, lambda * dias)
+
+# Imprimir la probabilidad
+probabilidad
+```
+
+(b) En el nuevo año calendario, el agente comienza sus actividades el lunes 2 de enero. ¿En qué día espera ver el centésimo reclamo?
+
+Dado que $E(S_{100})=(100)\left(\frac{1}{5}\right) = 20$, se espera que la reclamación número 100 se vea el vigésimo día hábil, es decir, el 27 de enero.
+
+| | |January||||
+|--|--|--|--|--|--|
+|Monday|2|9|16|23|30|
+|Tuesday| 3|10|17|24|31|
+|Wednesday|4|11|18|25| |
+|Thursday|5|12|19|26| |
+|Friday|6|13|20|27| |
+
+Podemos verificar este resultado mediante el siguiente código en R:
+```{r}
+# Parámetros del problema
+lambda <- 5
+reclamos_objetivo <- 100
+
+# Calcular el número de días esperados para alcanzar el centésimo reclamo
+dias_esperados <- reclamos_objetivo / lambda
+
+# Redondear hacia arriba, ya que no podemos tener una fracción de un día
+dias_esperados <- ceiling(dias_esperados)
+
+# Imprimir el número de días esperados
+dias_esperados
+```
+
+
+## Ejercicio 3.4. 
+Un vendedor contacta a clientes por teléfono y les ofrece su producto. Suponga que los tiempos que transcurren entre llamadas consecutivas (que incluyen la llamada y la pausa entre ellas) son independientes y tienen una distribución exponencial con una media de 5 minutos. Estima que el 15% de todos los clientes a los que llama realmente compran su producto.
+(a) Calcule el número esperado de ventas exitosas en las próximas 2 horas.
+
+Las llamadas telefónicas que resultan en ventas se producen con una tasa $(0,15)\left(\frac{60}{5}\right)=1,8$ por hora.
+Por lo tanto, en las próximas dos horas, habrá, de media(2)(1,8)=3,6 ventas con éxito.
+```{r}
+# Parámetros del problema
+media_tiempo_llamadas <- 5
+duracion_periodo <- 120
+tasa_exito <- 0.15
+
+# Calcular el número esperado de llamadas en 2 horas
+num_llamadas_esperadas <- duracion_periodo / media_tiempo_llamadas
+
+# Calcular el número esperado de ventas exitosas en 2 horas
+ventas_exitosas_esperadas <- num_llamadas_esperadas * tasa_exito
+
+# Imprimir el número esperado de ventas exitosas
+ventas_exitosas_esperadas
+```
+
+
+
+(b) Calcule la probabilidad de que en 1 hora realice 15 llamadas, de las cuales 5 resulten en una venta.
+$$P(N(1)=15, N_{sale}(1)=5) = P(N_{sale} (1)=5, N_{no~sale}(1)=10) = P(N_{sale}(1)=5) P(_{no~sale}(1)=10) = \frac{(1.8)^{5}} {5!} e^{-1,8} \frac{(10.2)^{10}} {10!} e^{-10.2} = 0.00325$$
+```{r}
+# Parámetros del problema
+media_tiempo_llamadas <- 5
+tasa_exito <- 0.15
+tasa_fracaso <- 1 - tasa_exito
+num_llamadas <- 15
+num_exitosas <- 5
+duracion_periodo <- 60
+
+# Calcular la tasa de llamadas (llamadas por minuto)
+tasa_llamadas <- 1 / media_tiempo_llamadas
+
+# Calcular la probabilidad de realizar 15 llamadas en 1 hora usando la distribución de Poisson
+prob_15_llamadas <- dpois(num_llamadas, lambda = tasa_llamadas * duracion_periodo)
+
+# Calcular la probabilidad de que 5 de las 15 llamadas resulten en una venta usando la distribución binomial
+prob_5_exitosas <- dbinom(num_exitosas, size = num_llamadas, prob = tasa_exito)
+
+# Calcular la probabilidad conjunta de ambos eventos
+prob_conjunta <- prob_15_llamadas * prob_5_exitosas
+
+# Imprimir la probabilidad conjunta
+prob_conjunta
+```
+
+(c) Encuentre la probabilidad condicional de que realice 10 ventas en 4 horas, dado que ha realizado 3 ventas la primera hora.
+$$P(N(4)=10\mid N(1)=3)= P(N(4)-N(1)=7)=P(N(3)=7)=\frac{((1.8)(3))^{7}}{7!}e^{-(1.8)(3)}= 0.119987$$
+```{r}
+# Parámetros del problema
+ventas_primera_hora <- 3
+ventas_objetivo <- 10
+duracion_total <- 4 * 60
+duracion_restante <- 3 * 60
+
+# Calcular la cantidad esperada de llamadas en las 3 horas restantes
+llamadas_esperadas_restantes <- tasa_llamadas * duracion_restante
+
+# Calcular la cantidad de ventas exitosas esperadas en las 3 horas restantes
+ventas_esperadas_restantes <- llamadas_esperadas_restantes * tasa_exito
+
+# Calcular la probabilidad condicional de realizar 7 ventas exitosas adicionales (10-3) usando la distribución de Poisson
+prob_condicional <- dpois(ventas_objetivo - ventas_primera_hora, lambda = ventas_esperadas_restantes)
+
+# Imprimir la probabilidad condicional
+prob_condicional
+```
+
+## Ejercicio 3.5
+Las personas contraen una enfermedad de acuerdo con un proceso de Poisson con una tasa desconocida $\lambda$. Supongamos que el período de incubación hasta que los síntomas de la enfermedad aparecen es una variable aleatoria con una función de distribución acumulada F conocida. Sea $N_1(t)$ el número de personas que aún no han mostrado ningún síntoma hasta el tiempo t.
+
+a) Argumente que ${N_{1}(t), t\geq 0}$ y ${N_{2}(t), t\geq 0}$ son procesos de Poisson independientes con medias
+
+$$\mathbb{E}(N_{1}(t)) = \lambda \int_0^t F(u)~du~and~\mathbb{E}(N_{2}(t)) = \lambda\int_0^t (1-F(u))~du.$$
+
+$N_1(t)$ y $N_2 (t)$ son procesos de Poisson divididos con las medias
+$\mathbb{E}(N_1 (t))=\lambda\int_0^t$P(la~enfermedad~se~contrae~en~el~momento~s,~los~síntomas~aparecen~en~el~momento~t)ds $=\lambda\int_0^t F(t-s)ds = \{u=t-s\}=\lambda\int_0^t F(u)du$ y $\mathbb{E}(N_{2}(t)) = \lambda\int_0^t$P(la enfermedad se contrae en el momento s, no se manifiestan síntomas en el momento t) ds$=\lambda\int_0^t(1-F(t-s))ds=\{u=t-s\}=\lambda\int_0^t (1-F(u))~du$
+
+Observe que la distribución de tiempo hasta que un individuo muestre síntomas es independiente de si otros individuos han mostrado síntomas. Por lo tanto, el número de individuos que no han mostrado síntomas sigue un proceso de Poisson con una tasa proporcional al número de individuos que aún no han mostrado síntomas en ese momento. Esto da lugar a $N_{1}(t)$ y $N_{2}(t)$ como procesos de Poisson independientes con medias como se especifica arriba.
+
+b) Para un tiempo t conocido y un número observado de individuos que muestran síntomas $\mathbb{\hat{E}}(N_1(t))$, demuestre que el número estimado de individuos infectados pero que aún no muestran síntomas es:
+$$\mathbb{\hat{E}}(N_2(t))=\frac{\mathbb{\hat{E}}(N_1(t))\int_0^t(1-F(u))du}{\int_0^tF(u)du}$$
+
+Dado que el período de incubación hasta que los síntomas de la enfermedad aparecen es una variable aleatoria con función de distribución acumulada F, el tiempo que un individuo ha estado infectado, pero aún no ha mostrado síntomas, es una variable aleatoria U con función de densidad de probabilidad f(u) y función de distribución acumulada F(u).
+
+La cantidad esperada de individuos infectados pero que aún no muestran síntomas en el tiempo t, E(N_2(t)), puede expresarse como:
+
+$$E(N_2(t)) = E(N_1(t)) \times P(\text{individuo infectado en el tiempo t no ha mostrado síntomas})$$
+
+La probabilidad de que un individuo infectado en el tiempo t no haya mostrado síntomas es:
+
+$$P(\text{individuo infectado en el tiempo t no ha mostrado síntomas}) = 1 - F(u)$$
+
+Entonces, podemos integrar esta probabilidad con respecto al tiempo, desde 0 hasta t:
+
+$$\int_0^t (1 - F(u)) du$$
+
+Similarmente, podemos integrar la función de distribución acumulada F(u) en el mismo intervalo:
+
+$$\int_0^t F(u) du$$
+
+Dividiendo la primera integral por la segunda, obtenemos:
+
+$$\frac{\int_0^t (1 - F(u)) du}{\int_0^t F(u) du}$$
+
+Multiplicando esta fracción por E(N_1(t)), obtenemos la cantidad estimada de individuos infectados pero que aún no muestran síntomas:
+
+$$\hat{E}(N_2(t)) = \frac{\hat{E}(N_1(t)) \int_0^t (1 - F(u)) du}{\int_0^t F(u) du}$$
+
+Esta fórmula nos permite estimar el número de individuos infectados pero que aún no han mostrado síntomas en un tiempo t conocido, dada una cantidad observada de individuos que ya muestran síntomas y una función de distribución acumulada F del período de incubación.
+
+(c) Suponga que el período de incubación hasta que los síntomas aparecen es una variable aleatoria distribuida exponencialmente con una media de 2 días. Si 1,000 personas muestran síntomas de una enfermedad para el día 10, estima el número de personas que también están infectadas pero que aún no han mostrado los síntomas.
+
+Alrededor de 248 individuos.
+```{r}
+E_N1_t <- 1000
+t <- 10
+
+# Función de distribución acumulada para una distribución exponencial con media de 2 días
+F <- function(u) {
+  1 - exp(-u / 2)
+}
+
+# Integración numérica utilizando la función integrate en R
+numerator <- integrate(function(u) 1 - F(u), lower = 0, upper = t)$value
+denominator <- integrate(F, lower = 0, upper = t)$value
+
+# Estimar el número de personas infectadas pero que aún no han mostrado síntomas
+E_N2_t <- E_N1_t * numerator / denominator
+E_N2_t
+```
+
+
+## Ejercicio 3.9. 
+En una popular rima infantil,
+Itsy bitsy spider went up the water spout.
+Down came the rain and washed the spider out. Out came the sun and dried up all the rain,
+And the itsy bitsy spider went up the spout again.
+
+Suponga que la longitud del conducto de bajada es de 30 pies y que la araña trepa a una velocidad constante de 1 pie por minuto. La lluvia cae como un proceso de Poisson con una tasa de 2 por hora.
+(a) Encuentre el tiempo esperado que le toma a la araña llegar a la cima.
+
+```{r}
+# Definir la tasa lambda del proceso de Poisson de la lluvia
+lambda <- 2/60 # eventos por minuto
+
+# Definir la longitud del conducto y la velocidad de la araña
+longitud <- 30 # pies
+velocidad <- 1 # pie por minuto
+
+# Calcular el tiempo esperado que le toma a la araña llegar a la cima
+tiempo_esperado <- longitud/velocidad
+
+# Imprimir el resultado
+print(tiempo_esperado)
+```
+La araña tarda 30 minutos (0.5 horas) en llegar a la cima si no hay lluvia. La tasa de lluvia es de 2 por hora. Denotemos por T el tiempo total que tarda la araña en llegar a la cima. La esperanza del tiempo T es E(T).
+
+Usamos la fórmula proporcionada para calcular E(T):
+
+$$E(T) = \frac{1}{2} (e^{0.5 \cdot 2} - 1)$$
+```{r}
+r <- 0.5 # tiempo en horas que le toma a la araña llegar a la cima sin lluvia
+lambda <- 2 # tasa de lluvia en eventos por hora
+
+# Calcular el tiempo esperado que le toma a la araña llegar a la cima
+E_T <- 0.5 * (exp(r * lambda) - 1)
+
+# Convertir el tiempo esperado a minutos
+E_T_minutes <- E_T * 60
+E_T_minutes
+```
+El tiempo esperado que le toma a la araña llegar a la cima es de 51.54845 minutos.
+
+(b) Encuentre el número esperado de veces que la araña será derribada antes de llegar a la cima.
+Dado que la lluvia cae como un proceso de Poisson con una tasa de 2 por hora, podemos calcular el número esperado de veces que la araña será derribada antes de llegar a la cima (0.5 horas) utilizando la función de probabilidad Poisson:
+```{r}
+# Calcular el número esperado de veces que la araña será lavada antes de llegar a la cima
+lambda <- 2
+t <- 0.5
+E_N <- exp(lambda * t) - 1
+E_N
+```
+
+
+
+
+
