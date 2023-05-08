@@ -11,8 +11,11 @@ x_menos = -np.log(1 - u)
 fig, (ax, ax1, ax2) = plt.subplots(ncols=3)
 ax.hist(x, "auto")
 ax.set_title("Grafica de x")
+
 ax1.hist(u, "auto")
 ax1.set_title("Grafica u")
+
 ax2.hist(x_menos, "auto")
 ax2.set_title("Grafica de log(1-u)")
+
 plt.show()
